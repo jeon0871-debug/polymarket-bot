@@ -1,0 +1,5 @@
+requests
+httpx
+py-clob-client
+anthropic
+python-dotenv

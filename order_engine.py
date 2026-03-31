@@ -30,13 +30,15 @@ class OrderEngine:
         book = self.get_orderbook(token_id)
         bids = book.get("bids", [])
         asks = book.get("asks", [])
+
         best_bid = float(bids[0]["price"]) if bids else None
         best_ask = float(asks[0]["price"]) if asks else None
         return best_bid, best_ask, book
 
-    def place_limit_buy(self, token_id: str, price: float, size: float):
-        if size > self.max_order_usdc:
-            raise ValueError(f"주문 크기 초과: {size} > {self.max_order_usdc}")
+    def place_limit_buy(self, token_id: str, price: float, size_usdc: float):
+        if size_usdc > self.max_order_usdc:
+            raise ValueError(f"주문 크기 초과: {size_usdc} > {self.max_order_usdc}")
+
         if not (0.01 <= price <= 0.99):
             raise ValueError(f"비정상 가격: {price}")
 
@@ -45,15 +47,16 @@ class OrderEngine:
                 "mode": "paper",
                 "token_id": token_id,
                 "price": price,
-                "size": size,
-                "message": "paper 모드이므로 실제 주문은 보내지 않았습니다."
+                "size_usdc": size_usdc,
+                "message": "paper 모드이므로 실제 주문 미실행"
             }
 
         order_args = OrderArgs(
             token_id=token_id,
             price=price,
-            size=size,
+            size=size_usdc,
             side="BUY"
         )
+
         signed_order = self.client.create_order(order_args)
         return self.client.post_order(signed_order, OrderType.GTC)

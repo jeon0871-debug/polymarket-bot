@@ -63,6 +63,8 @@ def main():
             logging.exception("Bot loop error")
             notifier.send(f"오류 발생: {e}")
             time.sleep(60)
+            from self_tuner import tune_config
+from telegram_reporter import build_daily_report
 
 if __name__ == "__main__":
     main()

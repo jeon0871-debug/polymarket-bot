@@ -1,5 +1,4 @@
-[config.py](https://github.com/user-attachments/files/26362821/config.py)
-[config.py](https://github.com/user-attachments/files/26362821/config.py)
+
 import os
 from dotenv import load_dotenv
 

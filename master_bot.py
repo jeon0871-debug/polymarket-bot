@@ -1,3 +1,4 @@
+
 import time
 import logging
 
@@ -16,16 +17,21 @@ logging.basicConfig(
 
 def main():
     require_env()
-    geo = check_geoblock()
-    logging.info(f"Geoblock passed: {geo}")
 
     notifier = TelegramNotifier(
         token=get_env("TELEGRAM_BOT_TOKEN"),
         chat_id=get_env("TELEGRAM_CHAT_ID")
     )
+
+    # 시작 시 geoblock 확인
+    geo = check_geoblock()
+    logging.info(f"Geoblock result: {geo}")
     notifier.send(f"봇 시작 | mode={get_env('TRADING_MODE')} | geo={geo}")
 
+    # 주문 엔진 초기화
     order_engine = OrderEngine()
+
+    # 리스크 매니저 초기화
     risk_manager = RiskManager(
         max_daily_loss=as_float("MAX_DAILY_LOSS", 20),
         max_open_positions=as_int("MAX_OPEN_POSITIONS", 3),
@@ -40,7 +46,9 @@ def main():
 
     while True:
         try:
-            check_geoblock()
+            # 루프마다 geoblock 재확인
+            geo = check_geoblock()
+            logging.info(f"Loop geoblock result: {geo}")
 
             if weather_enabled:
                 logging.info("Running weather cycle")

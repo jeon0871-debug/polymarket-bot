@@ -70,6 +70,7 @@ class NewsStrategy:
         edge_threshold = float(cfg.get("news_edge_threshold", 0.05))
         min_conf = float(cfg.get("min_confidence", 0.70))
         stake = float(cfg.get("max_order_usdc", 3.0))
+        blocked_categories = cfg.get("blocked_categories", [])
 
         markets = fetch_active_markets(limit=200)
         candidates = filter_news_markets(markets)
@@ -80,6 +81,10 @@ class NewsStrategy:
                 continue
 
             signal = self.estimate_signal(market, cfg)
+
+            if signal["category"] in blocked_categories:
+                continue
+
             if signal["direction"] != "yes_up" or signal["confidence"] < min_conf:
                 continue
 

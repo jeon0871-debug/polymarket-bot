@@ -1,4 +1,5 @@
-
+from self_tuner import tune_config
+from telegram_reporter import build_daily_report
 
 import time
 import logging
@@ -16,7 +17,8 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
-def main():
+def main(last_tune_ts = 0
+last_report_ts = 0):
     require_env()
 
     notifier = TelegramNotifier(
@@ -56,15 +58,14 @@ def main():
             if news_enabled:
                 logging.info("Running news cycle")
                 news_strategy.run_cycle()
-
+                tune_config()
             time.sleep(180)
 
         except Exception as e:
             logging.exception("Bot loop error")
             notifier.send(f"오류 발생: {e}")
             time.sleep(60)
-            from self_tuner import tune_config
-from telegram_reporter import build_daily_report
+             build_daily_report
 
 if __name__ == "__main__":
     main()

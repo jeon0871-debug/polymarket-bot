@@ -57,3 +57,4 @@ class NewsStrategy:
                     f"엣지: {edge:.2f}\n"
                     f"응답: {result}"
                 )
+                from paper_trade_logger import log_paper_trade

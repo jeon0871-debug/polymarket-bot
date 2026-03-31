@@ -5,6 +5,16 @@
   "max_order_usdc": 3.0,
   "paper_hold_minutes": 60,
   "daily_report_hour_utc": 1,
+
+  "strategy_min_trades": 5,
+  "strategy_disable_pnl_threshold": -5.0,
+  "strategy_reenable_pnl_threshold": 5.0,
+
+  "enabled_strategies": {
+    "weather": true,
+    "news": true
+  },
+
   "category_weights": {
     "war": 1.0,
     "election": 1.0,
@@ -13,9 +23,12 @@
     "weather": 1.0,
     "other": 0.85
   },
+
   "blocked_keywords": [
     "1 million",
     "$1 million",
     "million dollars"
-  ]
+  ],
+
+  "blocked_categories": []
 }

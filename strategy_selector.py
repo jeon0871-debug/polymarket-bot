@@ -24,24 +24,21 @@ def update_strategy_selection():
         count = int(stats.get("count", 0))
         total_pnl = float(stats.get("total_pnl", 0.0))
 
-        # 거래 수가 충분하고 손실이면 끈다
         if count >= min_trades and total_pnl <= disable_pnl_threshold:
             enabled[strategy_name] = False
 
-        # 다시 수익 기준 넘으면 켠다
         if count >= min_trades and total_pnl >= reenable_pnl_threshold:
             enabled[strategy_name] = True
 
     cfg["enabled_strategies"] = enabled
 
-    # 카테고리 차단도 자동 반영
     by_category = summary.get("by_category", {})
-    blocked_categories = cfg.get("blocked_categories", [])
-
     new_blocked = []
+
     for category, stats in by_category.items():
         count = int(stats.get("count", 0))
         total_pnl = float(stats.get("total_pnl", 0.0))
+
         if count >= min_trades and total_pnl <= disable_pnl_threshold:
             new_blocked.append(category)
 

@@ -12,11 +12,14 @@ class RiskManager:
     def can_enter(self, market_id: str) -> bool:
         if self.daily_pnl <= -self.max_daily_loss:
             return False
+
         if len(self.open_markets) >= self.max_open_positions:
             return False
+
         last = self.recent_entries.get(market_id)
         if last and (time.time() - last < self.cooldown_sec):
             return False
+
         return True
 
     def mark_enter(self, market_id: str):

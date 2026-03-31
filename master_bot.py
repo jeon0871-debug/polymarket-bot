@@ -2,7 +2,7 @@ import time
 import logging
 from datetime import datetime, timezone
 
-from config import require_env, get_env, as_bool, as_float, as_int
+from config import require_env, get_env, as_float, as_int, load_adaptive_config
 from geo_check import check_geoblock
 from notifier import TelegramNotifier
 from order_engine import OrderEngine
@@ -13,13 +13,14 @@ from paper_trade_updater import update_paper_trades
 from performance_analyzer import analyze_and_save
 from self_tuner import tune_config
 from telegram_reporter import build_daily_report
+from strategy_selector import update_strategy_selection
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
-def should_send_daily_report(last_report_day: str | None, hour_utc: int):
+def should_send_daily_report(last_report_day, hour_utc):
     now = datetime.now(timezone.utc)
     current_day = now.strftime("%Y-%m-%d")
     return now.hour >= hour_utc and last_report_day != current_day, current_day
@@ -47,34 +48,44 @@ def main():
     weather_strategy = WeatherStrategy(order_engine, risk_manager, notifier)
     news_strategy = NewsStrategy(order_engine, risk_manager, notifier)
 
-    weather_enabled = as_bool("WEATHER_ENABLED", True)
-    news_enabled = as_bool("NEWS_ENABLED", True)
-
     last_report_day = None
-    daily_report_hour_utc = 1
 
     while True:
         try:
             geo = check_geoblock()
             logging.info(f"Loop geoblock result: {geo}")
 
+            cfg = load_adaptive_config()
+            enabled_strategies = cfg.get("enabled_strategies", {
+                "weather": True,
+                "news": True
+            })
+            daily_report_hour_utc = int(cfg.get("daily_report_hour_utc", 1))
+
             update_paper_trades(order_engine, notifier)
 
-            if weather_enabled:
+            if enabled_strategies.get("weather", True):
                 logging.info("Running weather cycle")
                 weather_strategy.run_cycle()
+            else:
+                logging.info("Weather strategy disabled by performance filter")
 
             time.sleep(60)
 
-            if news_enabled:
+            if enabled_strategies.get("news", True):
                 logging.info("Running news cycle")
                 news_strategy.run_cycle()
+            else:
+                logging.info("News strategy disabled by performance filter")
 
             summary = analyze_and_save()
             logging.info(f"Performance summary: {summary}")
 
             new_cfg = tune_config()
             logging.info(f"Tuned config: {new_cfg}")
+
+            updated_cfg = update_strategy_selection()
+            logging.info(f"Strategy selection updated: {updated_cfg.get('enabled_strategies')}")
 
             send_now, current_day = should_send_daily_report(last_report_day, daily_report_hour_utc)
             if send_now:

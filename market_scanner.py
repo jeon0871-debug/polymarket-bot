@@ -4,7 +4,11 @@ import requests
 GAMMA_URL = "https://gamma-api.polymarket.com/markets"
 
 def fetch_active_markets(limit: int = 200):
-    params = {"active": "true", "closed": "false", "limit": limit}
+    params = {
+        "active": "true",
+        "closed": "false",
+        "limit": limit,
+    }
     resp = requests.get(GAMMA_URL, params=params, timeout=20)
     resp.raise_for_status()
     return resp.json()
@@ -15,7 +19,6 @@ def _market_text(market: dict) -> str:
     return f"{q} {desc}".lower()
 
 def _orderbook_enabled(market: dict) -> bool:
-    # 데이터 구조가 바뀌어도 최대한 유연하게 처리
     if "enableOrderBook" in market:
         return bool(market["enableOrderBook"])
     if "enable_order_book" in market:
@@ -27,7 +30,7 @@ def filter_weather_markets(markets: list):
     return [m for m in markets if any(k in _market_text(m) for k in keywords) and _orderbook_enabled(m)]
 
 def filter_news_markets(markets: list):
-    keywords = ["election", "president", "fed", "inflation", "tariff", "war", "ceasefire", "policy", "breaking", "court", "rate cut"]
+    keywords = ["election", "president", "fed", "inflation", "tariff", "war", "ceasefire", "policy", "breaking", "court", "rate cut", "bitcoin", "btc"]
     return [m for m in markets if any(k in _market_text(m) for k in keywords) and _orderbook_enabled(m)]
 
 def get_yes_no_token_ids(market: dict):

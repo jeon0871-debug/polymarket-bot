@@ -1,0 +1,20 @@
+{
+  "min_confidence": 0.70,
+  "max_order_usdc": 3.0,
+  "weather_edge_threshold": 0.05,
+  "news_edge_threshold": 0.05,
+  "category_weights": {
+    "war": 1.00,
+    "election": 1.00,
+    "bitcoin": 0.90,
+    "macro": 1.00,
+    "weather": 1.00,
+    "other": 0.85
+  },
+  "blocked_keywords": [
+    "1 million",
+    "$1 million",
+    "million dollars"
+  ]
+}
+

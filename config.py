@@ -1,5 +1,5 @@
-
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,3 +28,13 @@ def as_int(name: str, default: int) -> int:
 
 def as_float(name: str, default: float) -> float:
     return float(os.getenv(name, str(default)))
+
+def load_adaptive_config(path: str = "adaptive_config.json") -> dict:
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_adaptive_config(data: dict, path: str = "adaptive_config.json"):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)

@@ -43,4 +43,4 @@ def build_daily_report(notifier):
         f"- max_order_usdc: {cfg.get('max_order_usdc')}"
     )
 
-    notifier.send(text))
+    notifier.send(text)

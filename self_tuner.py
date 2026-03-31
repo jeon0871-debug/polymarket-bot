@@ -1,48 +1,30 @@
-import json
-import os
+from config import load_adaptive_config, save_adaptive_config
 from performance_analyzer import analyze_performance
-
-CONFIG_FILE = os.getenv("ADAPTIVE_CONFIG_FILE", "adaptive_config.json")
-
-def load_adaptive_config():
-    if not os.path.exists(CONFIG_FILE):
-        return {
-            "min_confidence": 0.70,
-            "max_order_usdc": 3.0,
-            "weather_edge_threshold": 0.05,
-            "news_edge_threshold": 0.05,
-            "category_weights": {},
-            "blocked_keywords": [],
-        }
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def save_adaptive_config(cfg):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, ensure_ascii=False, indent=2)
 
 def tune_config():
     cfg = load_adaptive_config()
-    perf = analyze_performance()
+    summary = analyze_performance()
 
-    if perf["count"] < 10:
-        return cfg, {"changed": False, "reason": "데이터 부족"}
+    if summary["total_closed"] < 10:
+        return cfg
 
-    if perf["win_rate"] < 0.45:
-        cfg["min_confidence"] = min(0.90, round(cfg.get("min_confidence", 0.70) + 0.02, 2))
-    elif perf["win_rate"] > 0.60:
-        cfg["min_confidence"] = max(0.55, round(cfg.get("min_confidence", 0.70) - 0.01, 2))
+    min_conf = float(cfg.get("min_confidence", 0.7))
+    max_order = float(cfg.get("max_order_usdc", 3.0))
 
-    category_weights = cfg.get("category_weights", {})
-    for category, stats in perf["by_category"].items():
-        weight = category_weights.get(category, 1.0)
-        if stats["count"] >= 5:
-            if stats["win_rate"] < 0.40:
-                weight = max(0.5, round(weight - 0.05, 2))
-            elif stats["win_rate"] > 0.60:
-                weight = min(1.5, round(weight + 0.05, 2))
-        category_weights[category] = weight
+    win_rate = float(summary.get("win_rate", 0.0))
+    total_pnl = float(summary.get("total_pnl", 0.0))
 
-    cfg["category_weights"] = category_weights
+    # 아주 보수적인 자동 조정
+    if win_rate < 0.45 or total_pnl < 0:
+        min_conf = min(0.9, round(min_conf + 0.02, 2))
+        max_order = max(1.0, round(max_order - 0.5, 2))
+
+    elif win_rate > 0.60 and total_pnl > 0:
+        min_conf = max(0.55, round(min_conf - 0.01, 2))
+        max_order = min(5.0, round(max_order + 0.25, 2))
+
+    cfg["min_confidence"] = min_conf
+    cfg["max_order_usdc"] = max_order
+
     save_adaptive_config(cfg)
-    return cfg, {"changed": True, "reason": "성과 기반 파라미터 조정 완료"}
+    return cfg

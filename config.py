@@ -43,7 +43,7 @@ TRADING_CONFIG = {
     # 자본
     "capital": 300.0,
 
-    # 리스크
+    # 리스크 관리
     "risk_per_trade": 0.02,
     "max_total_exposure": 0.35,
     "max_market_exposure": 0.10,
@@ -68,18 +68,18 @@ TRADING_CONFIG = {
     "use_mean_reversion": True,
     "use_market_maker": False,
 
-    # 모멘텀 전략
+    # 모멘텀 전략 조건
     "momentum_min_move": 0.04,
     "momentum_min_volume": 300,
     "momentum_min_imbalance": 1.8,
 
-    # 평균회귀 전략
+    # 평균회귀 전략 조건
     "meanrev_min_negative_momentum": -0.04,
     "meanrev_deviation_from_mid": 0.05,
 
-    # 메이커 전략
+    # 메이커 전략 조건
     "maker_min_spread": 0.025,
 
-    # 테스트/운영
+    # 테스트 모드
     "paper_trading": True
 }

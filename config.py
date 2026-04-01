@@ -38,3 +38,22 @@ def load_adaptive_config(path: str = "adaptive_config.json") -> dict:
 def save_adaptive_config(data: dict, path: str = "adaptive_config.json"):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+RADING_CONFIG = {
+    "capital": 300,
+
+    "risk_per_trade": 0.02,
+    "max_total_exposure": 0.35,
+    "daily_stop_loss": 0.07,
+
+    "max_spread": 0.03,
+    "min_depth": 400,
+    "min_trades_15m": 10,
+
+    "max_slippage": 0.015,
+    "reprice_seconds": 20,
+
+    "use_momentum": True,
+    "use_mean_reversion": True,
+    "use_market_maker": False
+}

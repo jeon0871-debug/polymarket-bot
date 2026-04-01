@@ -1,4 +1,4 @@
-import time
+import time raise Exception("STOP")
 import logging
 from datetime import datetime, timezone
 

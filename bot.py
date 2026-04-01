@@ -29,12 +29,6 @@ def get_market_data():
     }
 
 def build_signal(market, config):
-    """
-    전략 우선순위:
-    1) 모멘텀
-    2) 평균회귀
-    3) 메이커
-    """
     if config["use_momentum"]:
         signal = momentum_strategy(market, config)
         if signal:
@@ -54,8 +48,8 @@ def build_signal(market, config):
 
 def execute_trade(signal):
     """
-    현재는 테스트용 출력.
-    실제 주문 API 연결 시 이 함수를 교체하면 됨.
+    현재는 테스트용 출력만 수행.
+    실제 주문 API 연결 시 이 부분만 교체하면 됨.
     """
     print(f"[거래 실행] {signal}")
 
@@ -66,7 +60,7 @@ def run():
         passed, score, reasons = evaluate_market(market, TRADING_CONFIG)
 
         if not passed:
-            print(f"[시장 탈락] score={score} / reasons={reasons}")
+            print(f"[시장 탈락] score={score}, reasons={reasons}")
             time.sleep(2)
             continue
 

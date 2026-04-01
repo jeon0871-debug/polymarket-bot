@@ -1,4 +1,4 @@
-import timeraise Exception("STOP")
+import time
 import logging
 from datetime import datetime, timezone
 

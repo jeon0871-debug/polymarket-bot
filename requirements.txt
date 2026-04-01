@@ -3,3 +3,4 @@ websocket-client
 pandas
 numpy
 python-dotenv
+py-clob-client

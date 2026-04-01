@@ -1,4 +1,4 @@
 requests
-httpx
-py-clob-client
-python-dotenv
+websocket-client
+pandas
+numpy

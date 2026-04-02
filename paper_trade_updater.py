@@ -1,52 +1,98 @@
+import os
+import json
 from datetime import datetime, timezone
-from config import load_adaptive_config
-from paper_trade_logger import read_trades, write_trades
 
-def _parse_iso(s: str):
-    return datetime.fromisoformat(s)
+PAPER_TRADES_FILE = "paper_trades.json"
+
+
+def _load_trades():
+    if not os.path.exists(PAPER_TRADES_FILE):
+        return []
+    with open(PAPER_TRADES_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_trades(trades):
+    with open(PAPER_TRADES_FILE, "w", encoding="utf-8") as f:
+        json.dump(trades, f, ensure_ascii=False, indent=2)
+
+
+def _calculate_pnl(entry_price: float, current_price: float, stake_usdc: float):
+    if entry_price <= 0:
+        return 0.0
+    shares = stake_usdc / entry_price
+    current_value = shares * current_price
+    return round(current_value - stake_usdc, 4)
+
 
 def update_paper_trades(order_engine, notifier=None):
-    cfg = load_adaptive_config()
-    hold_minutes = cfg.get("paper_hold_minutes", 60)
+    trades = _load_trades()
+    updated = False
 
-    rows = read_trades()
-    changed = False
-    now = datetime.now(timezone.utc)
-
-    for row in rows:
-        if row.get("status") != "open":
+    for trade in trades:
+        if trade.get("status") != "open":
             continue
 
-        created_at = _parse_iso(row["created_at"])
-        elapsed_min = (now - created_at).total_seconds() / 60
+        token_id = trade.get("token_id")
+        entry_price = float(trade.get("entry_price", 0))
+        stake_usdc = float(trade.get("stake_usdc", 0))
 
-        if elapsed_min < hold_minutes:
-            continue
+        try:
+            best_bid, best_ask, _ = order_engine.get_best_prices(token_id)
 
-        token_id = row["token_id"]
-        entry_price = float(row["entry_price"])
-        stake = float(row["stake_usdc"])
+            current_price = best_bid if best_bid is not None else best_ask
+            if current_price is None:
+                continue
 
-        best_bid, best_ask, _ = order_engine.get_best_prices(token_id)
-        exit_price = best_bid if best_bid is not None else entry_price
+            pnl_usdc = _calculate_pnl(entry_price, current_price, stake_usdc)
+            trade["current_price"] = current_price
+            trade["pnl_usdc"] = pnl_usdc
+            trade["updated_at"] = datetime.now(timezone.utc).isoformat()
 
-        pnl = ((exit_price - entry_price) / max(entry_price, 0.01)) * stake
+            # 간단한 종료 규칙
+            # +15% 익절 / -10% 손절
+            take_profit_price = round(entry_price * 1.15, 4)
+            stop_loss_price = round(entry_price * 0.90, 4)
 
-        row["status"] = "closed"
-        row["closed_at"] = now.isoformat()
-        row["exit_price"] = exit_price
-        row["pnl"] = round(pnl, 2)
-        changed = True
+            should_close = False
+            close_reason = None
 
-        if notifier:
-            notifier.send(
-                f"📘 모의거래 종료\n"
-                f"시장: {row.get('market_question')}\n"
-                f"방향: {row.get('side')}\n"
-                f"진입가: {entry_price:.2f}\n"
-                f"청산가: {exit_price:.2f}\n"
-                f"PnL: {row['pnl']:+.2f}"
-            )
+            if current_price >= take_profit_price:
+                should_close = True
+                close_reason = "take_profit"
+            elif current_price <= stop_loss_price:
+                should_close = True
+                close_reason = "stop_loss"
 
-    if changed:
-        write_trades(rows)
+            if should_close:
+                trade["status"] = "closed"
+                trade["exit_price"] = current_price
+                trade["closed_at"] = datetime.now(timezone.utc).isoformat()
+                trade["close_reason"] = close_reason
+                updated = True
+
+                if notifier:
+                    notifier.send(
+                        f"📘 페이퍼 종료\n"
+                        f"전략: {trade.get('strategy')}\n"
+                        f"시장: {trade.get('market_question')}\n"
+                        f"진입: {entry_price:.3f}\n"
+                        f"청산: {current_price:.3f}\n"
+                        f"손익: ${pnl_usdc:.4f}\n"
+                        f"사유: {close_reason}"
+                    )
+            else:
+                updated = True
+
+        except Exception as e:
+            if notifier:
+                notifier.send(
+                    f"⚠️ paper trade 업데이트 오류\n"
+                    f"trade_id: {trade.get('id')}\n"
+                    f"error: {e}"
+                )
+
+    if updated:
+        _save_trades(trades)
+
+    return trades
